@@ -1,4 +1,9 @@
-const { getAllLaunches, addNewLaunch } = require("../../models/launches.modal");
+const {
+  getAllLaunches,
+  addNewLaunch,
+  abortLaunchWithId,
+  existsLaunchWithId,
+} = require("../../models/launches.modal");
 
 function httpGetAllLaunches(req, res) {
   return res.status(200).json(getAllLaunches());
@@ -30,7 +35,7 @@ function httpAddNewLaunch(req, res) {
 }
 
 function httpAbortLaunch(req, res) {
-  const launchId = req.params.id;
+  const launchId = Number(req.params.id);
 
   if (!existsLaunchWithId(launchId)) {
     return res.status(404).json({
@@ -39,6 +44,7 @@ function httpAbortLaunch(req, res) {
   }
 
   //if launch does exist
+  const aborted = abortLaunchWithId(launchId);
   return res.status(200).json(aborted);
 }
 
