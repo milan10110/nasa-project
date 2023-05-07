@@ -13,7 +13,7 @@ const launchesSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  lunchDate: {
+  launchDate: {
     type: Date,
     required: true,
   },
