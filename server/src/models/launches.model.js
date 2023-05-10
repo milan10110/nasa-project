@@ -21,12 +21,13 @@ saveLaunch(launch);
 
 const SPACEX_API_URL = "https://api.spacexdata.com/v4/launches/query";
 
-async function loadLaunchData() {
+async function populateLaunches() {
   console.log("Downloading launch data...");
 
   const response = await axios.post(SPACEX_API_URL, {
     query: {},
     options: {
+      pagination: false,
       populate: [
         {
           path: "rocket",
@@ -44,6 +45,11 @@ async function loadLaunchData() {
     },
   });
 
+  if (response.status !== 200) {
+    console.log("Problem downloading launch data");
+    throw new Error("Launch data downlaod failed");
+  }
+
   const launchDocs = response.data.docs;
   for (const launchDoc of launchDocs) {
     const payloads = launchDoc.payloads;
@@ -60,7 +66,29 @@ async function loadLaunchData() {
       success: launchDoc.success,
       customers: customers,
     };
+
+    // console.log(`${launch.flightNumber}`);
+
+    await saveLaunch(launch);
   }
+}
+
+async function loadLaunchData() {
+  const firstLaunch = await findLaunch({
+    flightNumber: 1,
+    rocket: "Falcon 1",
+    mission: "FalconSat",
+  });
+
+  if (firstLaunch) {
+    console.log("Launch data already loaded");
+  } else {
+    populateLaunches();
+  }
+}
+
+async function findLaunch(filter) {
+  return await launchesDatabase.findOne(filter);
 }
 
 async function existsLaunchWithId(launchId) {
@@ -84,6 +112,14 @@ async function getAllLaunches() {
 }
 
 async function saveLaunch(launch) {
+  await launchesDatabase.findOneAndUpdate(
+    { flightNumber: launch.flightNumber },
+    launch,
+    { upsert: true }
+  );
+}
+
+async function scheduleNewLaunch(launch) {
   const planet = await planets.findOne({
     keplerName: launch.target,
   });
@@ -93,14 +129,6 @@ async function saveLaunch(launch) {
     throw new Error("No matching planet found");
   }
 
-  await launchesDatabase.findOneAndUpdate(
-    { flightNumber: launch.flightNumber },
-    launch,
-    { upsert: true }
-  );
-}
-
-async function scheduleNewLaunch(launch) {
   const newFlightNumber = (await getLatestFlightNumber()) + 1;
 
   console.log(launch);
