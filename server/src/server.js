@@ -17,7 +17,7 @@ async function startServer() {
   await loadLaunchData();
 
   server.listen(PORT, () => {
-    console.log(`Listening on port ${PORT}...`);
+    console.log(`Listening on port ${PORT}....`);
   });
 }
 
